@@ -18,7 +18,17 @@ async function getFolderImages(folderId: string) {
       fields: 'files(id, name)',
     });
 
-    return response.data.files || [];
+    const files = response.data.files || [];
+    
+    // PERBAIKAN TYPESCRIPT: 
+    // Menyaring file yang kosong, lalu memaksa (cast) tipe datanya menjadi string pasti.
+    return files
+      .filter((file) => file.id && file.name)
+      .map((file) => ({
+        id: file.id as string,
+        name: file.name as string,
+      }));
+
   } catch (error) {
     console.error("Gagal memuat folder:", error);
     return [];
@@ -46,7 +56,9 @@ export default async function GalleryPage({
         {folderId ? (
           images.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {images.map((img: { id: string; name: string }) => (
+              {/* PERBAIKAN TYPESCRIPT: Karena data dari atas sudah pasti string, 
+                  kita tidak perlu mendeklarasikan tipe manual di dalam .map() */}
+              {images.map((img) => (
                 <div key={img.id} className="bg-black p-2 rounded-xl shadow-xl ring-1 ring-neutral-800 flex flex-col justify-between">
                   <div className="relative overflow-hidden rounded-lg bg-neutral-950 flex justify-center items-center aspect-[3/4]">
                     <SecureImage imageUrl={`/api/image?id=${img.id}`} />
