@@ -1,65 +1,41 @@
-import Image from "next/image";
+// app/page.tsx
+import SecureImage from '@/components/SecureImage';
 
-export default function Home() {
+export default function GalleryPage() {
+  // Ambil ID dari link Google Drive. 
+  // Contoh link: https://drive.google.com/file/d/1aBcDeFgHiJkLmNoPqRsTuVwXyZ/view
+  // Maka ID-nya adalah: 1aBcDeFgHiJkLmNoPqRsTuVwXyZ
+  const driveFileId = "MASUKKAN_ID_FILE_GOOGLE_DRIVE_DI_SINI"; 
+  
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-neutral-900 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-3xl space-y-6">
+        
+        {/* Header / Branding */}
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white tracking-widest uppercase">
+            Dhi Memories
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-neutral-400 text-sm mt-1">
+            Client Preview Gallery
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        
+        {/* Kontainer Gambar Aman */}
+        <div className="bg-black p-2 rounded-xl shadow-2xl relative overflow-hidden ring-1 ring-neutral-800 border-4 border-neutral-800">
+          {/* Kita memanggil rute API lokal, bukan link Drive langsung */}
+          <SecureImage imageUrl={`/api/image?id=${driveFileId}`} />
         </div>
-      </main>
-    </div>
+        
+        {/* Peringatan Klien */}
+        <div className="bg-neutral-800/50 p-4 rounded-lg text-center border border-neutral-700">
+          <p className="text-neutral-300 text-xs sm:text-sm leading-relaxed">
+            Tangkapan layar (screenshot) sistem dimatikan untuk melindungi hak cipta. <br />
+            Silakan pilih foto yang Anda inginkan dan hubungi admin untuk mendapatkan versi resolusi tinggi tanpa watermark.
+          </p>
+        </div>
+
+      </div>
+    </main>
   );
 }
