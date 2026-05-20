@@ -1,6 +1,9 @@
 import SecureImage from '@/components/SecureImage';
 import { google } from 'googleapis';
 
+// 1. TAMBAHAN PENTING: Memaksa Vercel membaca URL secara real-time
+export const dynamic = 'force-dynamic';
+
 async function getFolderImages(folderId: string) {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -20,8 +23,6 @@ async function getFolderImages(folderId: string) {
 
     const files = response.data.files || [];
     
-    // PERBAIKAN TYPESCRIPT: 
-    // Menyaring file yang kosong, lalu memaksa (cast) tipe datanya menjadi string pasti.
     return files
       .filter((file) => file.id && file.name)
       .map((file) => ({
@@ -35,12 +36,15 @@ async function getFolderImages(folderId: string) {
   }
 }
 
+// 2. PERBAIKAN NEXT.JS TERBARU: searchParams sekarang adalah Promise
 export default async function GalleryPage({
   searchParams,
 }: {
-  searchParams: { folder?: string };
+  searchParams: Promise<{ folder?: string }>;
 }) {
-  const folderId = searchParams.folder;
+  // 3. Menunggu (await) parameter URL terbaca
+  const params = await searchParams;
+  const folderId = params.folder;
   const images = folderId ? await getFolderImages(folderId) : [];
 
   return (
@@ -56,8 +60,6 @@ export default async function GalleryPage({
         {folderId ? (
           images.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {/* PERBAIKAN TYPESCRIPT: Karena data dari atas sudah pasti string, 
-                  kita tidak perlu mendeklarasikan tipe manual di dalam .map() */}
               {images.map((img) => (
                 <div key={img.id} className="bg-black p-2 rounded-xl shadow-xl ring-1 ring-neutral-800 flex flex-col justify-between">
                   <div className="relative overflow-hidden rounded-lg bg-neutral-950 flex justify-center items-center aspect-[3/4]">
@@ -68,7 +70,7 @@ export default async function GalleryPage({
               ))}
             </div>
           ) : (
-            <p className="text-neutral-500 text-center py-12">Tidak ada foto ditemukan.</p>
+            <p className="text-neutral-500 text-center py-12">Tidak ada foto ditemukan di folder ini.</p>
           )
         ) : (
           <p className="text-neutral-500 text-center py-12">Silakan masukkan ID Folder pada URL.</p>
