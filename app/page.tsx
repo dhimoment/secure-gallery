@@ -1,12 +1,14 @@
-// app/page.tsx
 import SecureImage from '@/components/SecureImage';
 
-export default function GalleryPage() {
-  // Ambil ID dari link Google Drive. 
-  // Contoh link: https://drive.google.com/file/d/1aBcDeFgHiJkLmNoPqRsTuVwXyZ/view
-  // Maka ID-nya adalah: 1aBcDeFgHiJkLmNoPqRsTuVwXyZ
-  const driveFileId = "MASUKKAN_ID_FILE_GOOGLE_DRIVE_DI_SINI"; 
-  
+// Menambahkan searchParams agar Next.js bisa membaca parameter URL
+export default function GalleryPage({
+  searchParams,
+}: {
+  searchParams: { id?: string };
+}) {
+  // Mengambil ID file dari parameter URL (misal: ?id=XYZ)
+  const driveFileId = searchParams.id;
+
   return (
     <main className="min-h-screen bg-neutral-900 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-3xl space-y-6">
@@ -21,10 +23,15 @@ export default function GalleryPage() {
           </p>
         </div>
         
-        {/* Kontainer Gambar Aman */}
-        <div className="bg-black p-2 rounded-xl shadow-2xl relative overflow-hidden ring-1 ring-neutral-800 border-4 border-neutral-800">
-          {/* Kita memanggil rute API lokal, bukan link Drive langsung */}
-          <SecureImage imageUrl={`/api/image?id=${driveFileId}`} />
+        {/* Kontainer Gambar */}
+        <div className="bg-black p-2 rounded-xl shadow-2xl relative overflow-hidden ring-1 ring-neutral-800 border-4 border-neutral-800 flex justify-center min-h-[300px] items-center">
+          {driveFileId ? (
+            <SecureImage imageUrl={`/api/image?id=${driveFileId}`} />
+          ) : (
+            <p className="text-neutral-500 text-sm text-center p-8">
+              Tidak ada foto yang dimuat.<br/>Pastikan link yang Anda buka sudah menyertakan ID foto.
+            </p>
+          )}
         </div>
         
         {/* Peringatan Klien */}
