@@ -1,47 +1,66 @@
 import SecureImage from '@/components/SecureImage';
+import { google } from 'googleapis';
 
-// Menambahkan searchParams agar Next.js bisa membaca parameter URL
-export default function GalleryPage({
+async function getFolderImages(folderId: string) {
+  try {
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+    });
+
+    const drive = google.drive({ version: 'v3', auth });
+
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType contains 'image/' and trashed = false`,
+      fields: 'files(id, name)',
+    });
+
+    return response.data.files || [];
+  } catch (error) {
+    console.error("Gagal memuat folder:", error);
+    return [];
+  }
+}
+
+export default async function GalleryPage({
   searchParams,
 }: {
-  searchParams: { id?: string };
+  searchParams: { folder?: string };
 }) {
-  // Mengambil ID file dari parameter URL (misal: ?id=XYZ)
-  const driveFileId = searchParams.id;
+  const folderId = searchParams.folder;
+  const images = folderId ? await getFolderImages(folderId) : [];
 
   return (
-    <main className="min-h-screen bg-neutral-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-3xl space-y-6">
-        
-        {/* Header / Branding */}
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white tracking-widest uppercase">
+    <main className="min-h-screen bg-neutral-900 text-white p-6 sm:p-12">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-extrabold tracking-widest uppercase text-white">
             Dhi Memories
           </h1>
-          <p className="text-neutral-400 text-sm mt-1">
-            Client Preview Gallery
-          </p>
-        </div>
-        
-        {/* Kontainer Gambar */}
-        <div className="bg-black p-2 rounded-xl shadow-2xl relative overflow-hidden ring-1 ring-neutral-800 border-4 border-neutral-800 flex justify-center min-h-[300px] items-center">
-          {driveFileId ? (
-            <SecureImage imageUrl={`/api/image?id=${driveFileId}`} />
-          ) : (
-            <p className="text-neutral-500 text-sm text-center p-8">
-              Tidak ada foto yang dimuat.<br/>Pastikan link yang Anda buka sudah menyertakan ID foto.
-            </p>
-          )}
-        </div>
-        
-        {/* Peringatan Klien */}
-        <div className="bg-neutral-800/50 p-4 rounded-lg text-center border border-neutral-700">
-          <p className="text-neutral-300 text-xs sm:text-sm leading-relaxed">
-            Tangkapan layar (screenshot) sistem dimatikan untuk melindungi hak cipta. <br />
-            Silakan pilih foto yang Anda inginkan dan hubungi admin untuk mendapatkan versi resolusi tinggi tanpa watermark.
-          </p>
+          <p className="text-neutral-400 text-sm">Client Preview Gallery</p>
         </div>
 
+        {folderId ? (
+          images.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {images.map((img: { id: string; name: string }) => (
+                <div key={img.id} className="bg-black p-2 rounded-xl shadow-xl ring-1 ring-neutral-800 flex flex-col justify-between">
+                  <div className="relative overflow-hidden rounded-lg bg-neutral-950 flex justify-center items-center aspect-[3/4]">
+                    <SecureImage imageUrl={`/api/image?id=${img.id}`} />
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-2 text-center truncate px-2">{img.name}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-neutral-500 text-center py-12">Tidak ada foto ditemukan.</p>
+          )
+        ) : (
+          <p className="text-neutral-500 text-center py-12">Silakan masukkan ID Folder pada URL.</p>
+        )}
       </div>
     </main>
   );
