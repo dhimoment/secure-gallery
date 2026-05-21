@@ -5,44 +5,36 @@ import { useEffect, useRef, useState } from 'react';
 export default function SecureImage({ imageUrl }: { imageUrl: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isSecure, setIsSecure] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false); // Status loading
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    // Load gambar ke dalam objek Image
     const img = new Image();
-    // Penting: Izinkan CORS jika mengambil dari Google Drive/API Eksternal
-    img.crossOrigin = 'anonymous'; 
     img.src = imageUrl;
 
     img.onload = () => {
-      // Sesuaikan ukuran kanvas dengan gambar
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
+      setIsLoaded(true); // Gambar selesai dimuat, hilangkan tulisan loading
     };
 
-    // --- PROTEKSI ANTI-SCREENSHOT (Simulasi) ---
-    
-    // 1. Deteksi saat jendela kehilangan fokus (Alt+Tab atau Snipping Tool aktif)
+    img.onerror = () => {
+      console.error("Gambar gagal dimuat dari server!");
+    };
+
+    // Deteksi keamanan
     const handleBlur = () => setIsSecure(false);
     const handleFocus = () => setIsSecure(true);
-
-    // 2. Deteksi tombol keyboard (Print Screen, Command+Shift+4)
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === 'PrintScreen' || 
-        (e.metaKey && e.shiftKey) // Deteksi Mac screenshot
-      ) {
+      if (e.key === 'PrintScreen' || (e.metaKey && e.shiftKey)) {
         setIsSecure(false);
-        // Kembalikan gambar setelah 2 detik
         setTimeout(() => setIsSecure(true), 2000); 
       }
     };
-
-    // 3. Matikan Klik Kanan
     const handleContextMenu = (e: MouseEvent) => e.preventDefault();
 
     window.addEventListener('blur', handleBlur);
@@ -59,25 +51,35 @@ export default function SecureImage({ imageUrl }: { imageUrl: string }) {
   }, [imageUrl]);
 
   return (
-    <div className="relative inline-block select-none">
-      {/* Jika terdeteksi tidak aman (blur/screenshot), tutupi dengan div hitam */}
+    <div className="relative inline-block select-none w-full h-full">
+      
+      {/* Tampilan Loading (Sebelum gambar muncul) */}
+      {!isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-neutral-500 text-sm animate-pulse">Memuat foto...</span>
+        </div>
+      )}
+
+      {/* Tampilan Terdeteksi Screenshot */}
       {!isSecure && (
-        <div className="absolute inset-0 bg-black z-10 flex items-center justify-center">
-          <span className="text-white font-bold">Screenshot Terdeteksi</span>
+        <div className="absolute inset-0 bg-black z-20 flex items-center justify-center">
+          <span className="text-white font-bold text-sm">Screenshot Terdeteksi</span>
         </div>
       )}
       
       <canvas 
         ref={canvasRef} 
-        className="max-w-full h-auto pointer-events-none"
+        className={`max-w-full h-auto pointer-events-none transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
       />
       
-      {/* Watermark Transparan Dinamis di atas kanvas */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-        <span className="text-4xl font-bold text-white uppercase transform -rotate-45">
-          PREVIEW ONLY
-        </span>
-      </div>
+      {/* Watermark Transparan */}
+      {isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none z-10">
+          <span className="text-4xl sm:text-6xl font-bold text-white uppercase transform -rotate-45">
+            PREVIEW ONLY
+          </span>
+        </div>
+      )}
     </div>
   );
 }

@@ -16,23 +16,33 @@ export async function GET(request: Request) {
       scopes: ['https://www.googleapis.com/auth/drive.readonly'],
     });
 
-    const drive = google.drive({ version: 'v3', auth });
+    // Ambil token akses secara manual
+    const client = await auth.getClient();
+    const tokenResponse = await client.getAccessToken();
+    const token = tokenResponse.token;
 
-    // PERBAIKAN: Menggunakan 'stream' agar Vercel tidak crash karena foto besar
-    const response = await drive.files.get(
-      { fileId: fileId, alt: 'media' },
-      { responseType: 'stream' }
-    );
+    // Gunakan fungsi Fetch bawaan Next.js (Native Web Stream)
+    const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+    const imageResponse = await fetch(driveUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    return new NextResponse(response.data as any, {
+    if (!imageResponse.ok) {
+      console.error("Gagal menarik dari Google Drive:", imageResponse.status);
+      return new NextResponse('Gagal dari Google Drive', { status: imageResponse.status });
+    }
+
+    // Teruskan Web Stream langsung ke Client
+    return new NextResponse(imageResponse.body, {
       headers: {
         'Content-Type': 'image/jpeg',
-        // Cache gambar selama 1 jam agar loading selanjutnya jauh lebih cepat
         'Cache-Control': 'public, max-age=3600',
       },
     });
   } catch (error) {
-    console.error("Error image fetch:", error);
+    console.error("Error API:", error);
     return new NextResponse('Gagal memproses gambar', { status: 500 });
   }
 }
